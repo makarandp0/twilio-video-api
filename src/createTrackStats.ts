@@ -55,6 +55,10 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     return track.kind === 'video';
   }
 
+  function isRemoteTrack(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack): track is RemoteAudioTrack|RemoteVideoTrack {
+     return `isSwitchedOff` in track;
+  }
+
   createLabeledStat({
     container,
     label: 'class'
@@ -72,6 +76,30 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
   });
 
+  let switchOffReason: ILabeledStat|null = null;
+  let trackEnabled: ILabeledStat|null = null;
+  let isSwitchedOff: ILabeledStat|null = null;
+  if (isRemoteTrack(track)) {
+    switchOffReason = createLabeledStat({
+      container,
+      label: 'switchOffReason',
+      valueMapper: (text: string|null) => text ? sheet.classes.background_yellow : undefined
+    });
+
+    isSwitchedOff = createLabeledStat({
+      container,
+      label: 'isSwitchedOff',
+      valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
+    });
+  } else {
+    trackEnabled = createLabeledStat({
+      container,
+      label: 'Track.enabled',
+      valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
+    });
+  }
+
+
   const muted = createLabeledStat({
     container,
     label: 'muted',
@@ -84,38 +112,45 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
   });
 
-  const trackEnabled = createLabeledStat({
-    container,
-    label: 'Track.enabled',
-    valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
-  });
 
   // line separator between settings
   createElement({ container, type: 'hr'});
 
   const trackSettingKeyToLabeledStat = new Map<string, ILabeledStat>();
   function updateTrackSettings() {
-    const trackSettings = track.mediaStreamTrack.getSettings();
-    const keys = Object.keys(trackSettings);
-    keys.forEach(key => {
-      // exclude big settings
-      if (!['deviceId', 'groupId'].includes(key)) {
-        let settingStat = trackSettingKeyToLabeledStat.get(key);
-        if (!settingStat) {
-          settingStat = createLabeledStat({
-            container,
-            label: key,
-            valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
-          });
-          trackSettingKeyToLabeledStat.set(key, settingStat);
+    if (track.mediaStreamTrack) {
+      const trackSettings = track.mediaStreamTrack.getSettings();
+      const keys = Object.keys(trackSettings);
+      keys.forEach(key => {
+        // exclude big settings
+        if (!['deviceId', 'groupId'].includes(key)) {
+          let settingStat = trackSettingKeyToLabeledStat.get(key);
+          if (!settingStat) {
+            settingStat = createLabeledStat({
+              container,
+              label: key,
+              valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
+            });
+            trackSettingKeyToLabeledStat.set(key, settingStat);
+          }
+          let statValue = trackSettings[key as keyof MediaTrackSettings];
+          if (typeof statValue === 'number') {
+            statValue = Math.round(statValue * 100) / 100;
+          }
+          settingStat.setText(String(statValue));
         }
-        let statValue = trackSettings[key as keyof MediaTrackSettings];
-        if (typeof statValue === 'number') {
-          statValue = Math.round(statValue * 100) / 100;
-        }
-        settingStat.setText(String(statValue));
+      });
+    } else {
+      let settingStat = trackSettingKeyToLabeledStat.get("mediaStreamTrack");
+      if (!settingStat) {
+        settingStat = createLabeledStat({
+          container,
+          label: 'mediaStreamTrack',
+          valueMapper: (text: string) => text === 'none' ? sheet.classes.background_yellow : undefined
+        });
+        trackSettingKeyToLabeledStat.set('mediaStreamTrack', settingStat);
       }
-    });
+    }
   }
 
   function listenOnMSTrack(msTrack: MediaStreamTrack) {
@@ -128,17 +163,27 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
   track.on('disabled', () => updateStats());
   track.on('enabled', () => updateStats());
   track.on('stopped', () => updateStats());
+  track.on('switchedOff', () => updateStats());
+  track.on('switchedOn', () => updateStats());
+
   track.on('started', () => {
     updateStats();
     listenOnMSTrack(track.mediaStreamTrack);
   });
 
   function updateStats() {
-    readyState.setText(track.mediaStreamTrack.readyState);
-    enabled.setText(`${track.mediaStreamTrack.enabled}`);
+    readyState.setText(track.mediaStreamTrack ? track.mediaStreamTrack.readyState : 'unknown');
+
+    // enabled.setText(`${track.mediaStreamTrack.enabled}`);
     started.setText(`${track.isStarted}`);
-    muted.setText(`${track.mediaStreamTrack.muted}`);
-    trackEnabled.setText(`${track.isEnabled}`);
+    muted.setText(track.mediaStreamTrack ? `${track.mediaStreamTrack.muted}` : 'unknown');
+    if (isRemoteTrack(track)) {
+      isSwitchedOff?.setText(`${track.isSwitchedOff}`)
+      switchOffReason?.setText(`${track.switchOffReason}`)
+    } else {
+      trackEnabled?.setText(`${track.isEnabled}`);
+    }
+
     updateTrackSettings();
   }
 

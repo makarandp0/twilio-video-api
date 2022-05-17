@@ -36,6 +36,10 @@ const style = {
     // padding: '0.5em',
     'text-align': 'center',
   },
+  zIndex: {
+    // padding: '0.5em',
+    'z-index': 10,
+  },
   roomControlsRow: {
     'width': "100%",
     'flex-direction': 'row',
@@ -208,7 +212,7 @@ export function createRoomControls(
     labelText,
     placeHolder: 'Enter server url',
     labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
+    inputClasses: [sheet.classes.roomControlsInput, sheet.classes.zIndex]
   });
 
   const extraRoomOptionsControl = createLabeledInput({
@@ -216,6 +220,7 @@ export function createRoomControls(
     labelText: 'extraRoomOptions: ',
     placeHolder: 'extraRoomOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
@@ -224,6 +229,7 @@ export function createRoomControls(
     labelText: 'extraConnectOptions: ',
     placeHolder: 'extraConnectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
