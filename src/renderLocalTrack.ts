@@ -70,6 +70,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
   let publishBtn: IButton;
   let priority: ILabeledStat;
   let trackPublication: LocalTrackPublication | null = Array.from(room.localParticipant.tracks.values()).find(trackPub => trackPub.track === track) || null;
+
   const updateControls = () => {
     // show priority buttons only when trackPublication is available.
     priorityButtons.forEach(priButton => priButton.show(!!trackPublication))
@@ -98,6 +99,14 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     }
   });
 
+  // for large rooms publish can happen later
+  room.localParticipant.on('trackPublished', publication => {
+    if (publication.track === track) {
+      console.log(`Successfully published ${publication.kind} Track`);
+      trackPublication = publication;
+      updateControls();
+    }
+  });
 
   priority = createLabeledStat({
     container,
