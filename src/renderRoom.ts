@@ -87,12 +87,13 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
     restCreds: REST_CREDENTIALS,
   }) {
   const credentialsAt = `${restCreds.signingKeySid}:${restCreds.signingKeySecret}@`;
-  const baseUrl = restCreds.restUrl;
+  const urlWithCreds = restCreds.restUrl;
+  const urlWithoutCreds = restCreds.restUrlNoCreds;
 
-  createLink({ container, linkText: 'RecordingRules', linkUrl: `${baseUrl}/v1/Rooms/${room.sid}/RecordingRules`, newTab: true });
+  createLink({ container, linkText: 'RecordingRules', linkUrl: `${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules`, newTab: true });
 
   createButton('copy start recording', container, () => {
-    const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}/RecordingRules' \
+    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
     -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'Rules=[{"type": "include", "all": "true"}]'`;
@@ -100,7 +101,7 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
   });
 
   createButton('copy stop recording', container, () => {
-    const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}/RecordingRules' \
+    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
     -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'Rules=[{"type": "exclude", "all": "true"}]'`;
@@ -108,7 +109,7 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
   });
 
   createButton('copy Complete Room', container, () => {
-    const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}' \
+    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}' \
     -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'Status=completed'`;
@@ -116,19 +117,24 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
     // completeRoom
   });
 
-  createLink({ container, linkText: `/v1/Rooms/${room.sid}`, linkUrl: `${baseUrl}/v1/Rooms/${room.sid}`, newTab: true });
+  createLink({ container, linkText: `/v1/Rooms/${room.sid}`, linkUrl: `${urlWithCreds}/v1/Rooms/${room.sid}`, newTab: true });
 
   // this works.
-  // createButton('fetch room', roomHeaderDiv, async () => {
-  //   try {
-  //     var headers = new Headers();
-  //     headers.append('Authorization', 'Basic ' + btoa(creds.signingKeySid + ':' + creds.signingKeySecret));
-  //     const result = await fetch(`${baseUrlNoCredentials}/v1/Rooms/${room.sid}`, { headers });
-  //     log(result);
-  //   } catch (e) {
-  //     log('Error fetching: ', e);
-  //   }
-  // });
+  createButton('log room details to console', container, async () => {
+    try {
+      var headers = new Headers();
+      headers.append('Authorization', 'Basic ' + btoa(restCreds.signingKeySid + ':' + restCreds.signingKeySecret));
+      const result = await fetch(`${urlWithoutCreds}/v1/Rooms/${room.sid}`, { headers });
+      console.log('Fetch room result: ', result);
+      if (result.ok) {
+        const json = await result.json();
+        console.log('Result.json = ', JSON.stringify(json, null, 4));
+      }
+
+    } catch (e) {
+      console.log('Error fetching: ', e);
+    }
+  });
 }
 
 export async function renderRoomDetails({ room, container, restCreds, logger }: {
