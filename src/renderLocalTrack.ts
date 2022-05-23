@@ -144,20 +144,22 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
 }
 
 export interface IRenderedLocalTrack {
+  localTrackControls: HTMLDivElement,
   roomAdded: (room: Room) => void;
   roomRemoved: (room: Room) => void;
+  setOnClosed: (callback: () => void) => void;
 }
 
-export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, trackName = 'LocalTrack', onClosed, videoDevices = [] }: {
+export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, trackName = 'LocalTrack', videoDevices = [] }: {
   trackName?: string,
   rooms: Room[],
   track: LocalAudioTrack | LocalVideoTrack,
   container: HTMLElement,
   autoAttach: boolean,
   autoPublish: boolean,
-  onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
 }): IRenderedLocalTrack {
+  let onClosed = () => {};
   const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: trackName, divClass: sheet.classes.localTrackContainer });
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
@@ -246,8 +248,14 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     onClosed();
   });
 
+  function setOnClosed(callback: () => void) {
+    onClosed = callback;
+  };
+
   return {
+    localTrackControls,
     roomAdded,
-    roomRemoved
+    roomRemoved,
+    setOnClosed
   };
 }

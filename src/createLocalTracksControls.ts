@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
-import { syntheticAudio } from './components/syntheticaudio';
+import { syntheticAudio, SyntheticAudioControl } from './components/syntheticaudio';
 import { syntheticVideo }  from './components/syntheticvideo';
 import { log } from './components/log';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
@@ -13,6 +13,7 @@ import jss from './jss'
 import { createLabeledInput } from './components/createLabeledInput';
 import { IRoomControl } from './createRoomControls';
 import { createSelection } from './components/createSelection';
+import { createLabeledStat } from './components/labeledstat';
 
 type localTrack = LocalAudioTrack | LocalVideoTrack;
 
@@ -69,29 +70,31 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
     log('Track settings: ', localTrack.mediaStreamTrack.getSettings && localTrack.mediaStreamTrack.getSettings());
     log('Track capabilities: ', localTrack.mediaStreamTrack.getCapabilities && localTrack.mediaStreamTrack.getCapabilities());
     localTracks.push(localTrack);
-    renderedTracks.set(localTrack, renderLocalTrack({
+    const renderedTrack = renderLocalTrack({
       container: localTracksContainer,
       rooms,
       track: localTrack,
       videoDevices,
       trackName,
       autoAttach: roomControl.shouldAutoAttach(),
-      autoPublish: roomControl.shouldAutoPublish(),
-      onClosed: () => {
-        const index = localTracks.indexOf(localTrack);
-        if (index > -1) {
-          localTracks.splice(index, 1);
-        }
-        renderedTracks.delete(localTrack);
+      autoPublish: roomControl.shouldAutoPublish()
+    })
+    renderedTracks.set(localTrack, renderedTrack);
+    renderedTrack.setOnClosed(() => {
+      const index = localTracks.indexOf(localTrack);
+      if (index > -1) {
+        localTracks.splice(index, 1);
       }
-    }));
+      renderedTracks.delete(localTrack);
+    });
+    return renderedTrack;
   }
 
   function renderStandAloneMediaStreamTrack({ msTrack, autoAttach = true } : { msTrack: MediaStreamTrack, autoAttach: boolean }) {
     const localTrack = msTrack.kind === 'video' ?
       new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video' }) :
       new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio' });
-    renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
+    renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false });
   }
 
   function getLocalTrackOptions(defaultName: string) : CreateLocalTrackOptions {
@@ -120,6 +123,7 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
     try {
       const trackOptions = getLocalTrackOptions(thisTrackName);
       let localTrack: LocalAudioTrack|LocalVideoTrack;
+      let syntheticAudioControl: SyntheticAudioControl | null = null;
       switch(trackType) {
         case 'Local Audio':
         localTrack = await Video.createLocalAudioTrack(trackOptions);
@@ -134,7 +138,8 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
         break;
 
         case 'Synthetic Audio':
-        localTrack = new Video.LocalAudioTrack(syntheticAudio(), { logLevel: 'warn', name: thisTrackName });
+        syntheticAudioControl = syntheticAudio();
+        localTrack = new Video.LocalAudioTrack(syntheticAudioControl.track, { logLevel: 'warn', name: thisTrackName });
         break;
 
         case 'Screen Share':
@@ -147,7 +152,29 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
           throw new Error('invalid selection: ' + trackType);
       };
 
-      manageLocalTrack({ localTrack, trackName: thisTrackName });
+      const renderedTrack = manageLocalTrack({ localTrack, trackName: thisTrackName });
+      if (syntheticAudioControl) {
+        const gainValue = createLabeledStat({
+          container: renderedTrack.localTrackControls,
+          label: 'Gain',
+        });
+        gainValue.setText(String(syntheticAudioControl.getGain().value));
+
+        createButton("Gain +", renderedTrack.localTrackControls, async () => {
+          if (syntheticAudioControl) {
+            syntheticAudioControl.getGain().value = syntheticAudioControl.getGain().value + 0.1;
+            gainValue.setText(String(syntheticAudioControl.getGain().value));
+          }
+
+        });
+        createButton("Gain -", renderedTrack.localTrackControls, async () => {
+          if (syntheticAudioControl) {
+            syntheticAudioControl.getGain().value -= 0.1;
+            gainValue.setText(String(syntheticAudioControl.getGain().value));
+          }
+        });
+      }
+
     } catch (ex) {
       log('Error creating track: ', ex);
     }
