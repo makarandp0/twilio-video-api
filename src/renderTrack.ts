@@ -3,7 +3,7 @@ import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat } from './components/labeledstat';
 import { createTrackStats } from './createTrackStats';
-import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
+import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack, Track } from 'twilio-video';
 
 import jss from './jss'
 import { setupAudioSyncDevices } from './setupAudioSyncDevices';
@@ -27,6 +27,10 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
+function isRemoteTrack(track: Track): track is RemoteAudioTrack | RemoteVideoTrack {
+  return  ('isSwitchedOff' in track);
+}
+
 /**
  * Attach the AudioTrack to the HTMLAudioElement and start the Waveform.
  */
@@ -37,9 +41,27 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const canvasContainer = createDiv(container, 'canvasContainer');
   canvasContainer.appendChild(wave.element);
 
+  function startOrStopWaveForm() {
+    console.warn('makarand: starting or stopping waveForm');
+    wave.updateStartStop();
+  }
+
+  if (isRemoteTrack(track)) {
+    const remoteAudioTrack = track as RemoteAudioTrack;
+    remoteAudioTrack.addListener('switchedOff', startOrStopWaveForm);
+    remoteAudioTrack.addListener('switchedOn', startOrStopWaveForm);
+  }
+
   return {
     mediaElement: audioElement,
-    stop: (): void => { wave.stop() }
+    stop: (): void => {
+      wave.stop();
+      if (isRemoteTrack(track)) {
+        const remoteAudioTrack = track as RemoteAudioTrack;
+        remoteAudioTrack.removeListener('switchedOff', startOrStopWaveForm);
+        remoteAudioTrack.removeListener('switchedOn', startOrStopWaveForm);
+      }
+    }
   }
 }
 

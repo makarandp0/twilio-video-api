@@ -154,9 +154,18 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
   }
 
   function listenOnMSTrack(msTrack: MediaStreamTrack) {
-    msTrack.addEventListener('ended', () => updateStats());
-    msTrack.addEventListener('mute', () => updateStats());
-    msTrack.addEventListener('unmute', () => updateStats());
+    if (msTrack) {
+      msTrack.addEventListener('ended', () => updateStats());
+      msTrack.addEventListener('mute', () => updateStats());
+      msTrack.addEventListener('unmute', () => updateStats());
+
+      // un-listen
+      return () => {
+        msTrack.removeEventListener('ended', () => updateStats());
+        msTrack.removeEventListener('mute', () => updateStats());
+        msTrack.removeEventListener('unmute', () => updateStats());
+      }
+    }
   }
 
   track.on('dimensionsChanged', () => updateStats());
@@ -166,9 +175,13 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
   track.on('switchedOff', () => updateStats());
   track.on('switchedOn', () => updateStats());
 
+  let listener: (() => void) | undefined = undefined;
   track.on('started', () => {
+    if (listener) {
+      listener();
+    }
     updateStats();
-    listenOnMSTrack(track.mediaStreamTrack);
+    listener = listenOnMSTrack(track.mediaStreamTrack);
   });
 
   function updateStats() {

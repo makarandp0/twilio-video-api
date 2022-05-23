@@ -92,30 +92,30 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
 
   createLink({ container, linkText: 'RecordingRules', linkUrl: `${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules`, newTab: true });
 
-  createButton('copy start recording', container, () => {
-    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
-    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    -d 'Rules=[{"type": "include", "all": "true"}]'`;
-    navigator.clipboard.writeText(command);
-  });
+  // createButton('copy start recording', container, () => {
+  //   const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
+  //   -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
+  //   -H "Content-Type: application/x-www-form-urlencoded" \
+  //   -d 'Rules=[{"type": "include", "all": "true"}]'`;
+  //   navigator.clipboard.writeText(command);
+  // });
 
-  createButton('copy stop recording', container, () => {
-    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
-    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    -d 'Rules=[{"type": "exclude", "all": "true"}]'`;
-    navigator.clipboard.writeText(command);
-  });
+  // createButton('copy stop recording', container, () => {
+  //   const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}/RecordingRules' \
+  //   -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
+  //   -H "Content-Type: application/x-www-form-urlencoded" \
+  //   -d 'Rules=[{"type": "exclude", "all": "true"}]'`;
+  //   navigator.clipboard.writeText(command);
+  // });
 
-  createButton('copy Complete Room', container, () => {
-    const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}' \
-    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    -d 'Status=completed'`;
-    navigator.clipboard.writeText(command);
-    // completeRoom
-  });
+  // createButton('copy Complete Room', container, () => {
+  //   const command = `curl -X POST '${urlWithCreds}/v1/Rooms/${room.sid}' \
+  //   -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
+  //   -H "Content-Type: application/x-www-form-urlencoded" \
+  //   -d 'Status=completed'`;
+  //   navigator.clipboard.writeText(command);
+  //   // completeRoom
+  // });
 
   createLink({ container, linkText: `/v1/Rooms/${room.sid}`, linkUrl: `${urlWithCreds}/v1/Rooms/${room.sid}`, newTab: true });
 

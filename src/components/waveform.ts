@@ -13,7 +13,9 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
+let instance = 0;
 export function waveform({ width = 200, height = 150, mediaStream }: { mediaStream: MediaStream, width?: number, height?: number }) {
+  const thisInstance = instance++;
   let stopped = false;
   const canvas = Object.assign(document.createElement('canvas'), { width, height });
   canvas.classList.add(sheet.classes.background_gray);
@@ -58,6 +60,10 @@ export function waveform({ width = 200, height = 150, mediaStream }: { mediaStre
     // a certain slice of the full width of the canvas.
     var sliceWidth = width / bufferLength;
 
+    canvasCtx.font = '30px Verdana';
+    canvasCtx.textAlign = 'center';
+    canvasCtx.fillText(`${thisInstance}`, 25, 25);
+
     // For each byte of frequency, draw a slice to the canvas. Together, the canvas will be
     // covered by the resulting slices from left to right.
     var x = 0;
@@ -80,18 +86,41 @@ export function waveform({ width = 200, height = 150, mediaStream }: { mediaStre
     canvasCtx.stroke();
   }
 
-  audioContext.resume().then(function() {
-    // Create a new audio source for the passed stream, and connect it to the analyser.
-    const audioSource = audioContext.createMediaStreamSource(mediaStream);
-    audioSource.connect(analyser);
-     // Start the render loop
-    renderFrame();
-  });
+  function start() {
+    stopped = false;
+    audioContext.resume().then(function() {
+      // Create a new audio source for the passed stream, and connect it to the analyser.
+      const audioSource = audioContext.createMediaStreamSource(mediaStream);
+      audioSource.connect(analyser);
+      // Start the render loop
+      renderFrame();
+    });
+  }
+
+  function stop() {
+    stopped = true;
+  }
+
+
+  if (mediaStream.getAudioTracks().length !== 0) {
+    start();
+  } else {
+    stop();
+  }
 
   return {
     element: canvas,
     stop: (): void => {
-      stopped = true;
+      stop();
+    },
+    updateStartStop: () => {
+      setTimeout(() => {
+        if (stopped) {
+          start();
+        } else {
+          stop();
+        }
+      });
     }
   }
 }
