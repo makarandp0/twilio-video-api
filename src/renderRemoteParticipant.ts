@@ -131,9 +131,9 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   participant.on('reconnecting', () => participantSidAndState.setText(participant.state))
   participant.on('reconnected', () => participantSidAndState.setText(participant.state))
 
-  if (restCreds !== null) {
-    remoteParticipantRestAPI(participant, container, room, restCreds);
-  }
+  // if (restCreds !== null) {
+  //   remoteParticipantRestAPI(participant, container, room, restCreds);
+  // }
   const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {

@@ -115,9 +115,10 @@ export function waveform({ width = 200, height = 150, mediaStream }: { mediaStre
     },
     updateStartStop: () => {
       setTimeout(() => {
-        if (stopped) {
+        const hasAudio = mediaStream.getAudioTracks().length !== 0;
+        if (hasAudio && stopped) {
           start();
-        } else {
+        } else if (!hasAudio) {
           stop();
         }
       });

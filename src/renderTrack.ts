@@ -42,7 +42,6 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   canvasContainer.appendChild(wave.element);
 
   function startOrStopWaveForm() {
-    console.warn('makarand: starting or stopping waveForm');
     wave.updateStartStop();
   }
 
