@@ -8,7 +8,8 @@ import {
   RemoteVideoTrack,
   RemoteTrackPublication,
   RemoteAudioTrackStats,
-  RemoteVideoTrackStats
+  RemoteVideoTrackStats,
+  Room
 } from 'twilio-video';
 
 import { IRenderedRemoteMediaTrack, renderRemoteMediaTrack } from './renderRemoteMediaTrack';
@@ -48,7 +49,14 @@ export type IRenderedRemoteTrackPublication = {
   stopRendering: () => void;
 }
 
-export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
+export function renderRemoteTrackPublication({
+  room, trackPublication, container, autoAttach
+}:  {
+  room: Room,
+  trackPublication: RemoteTrackPublication,
+  container: HTMLElement,
+  autoAttach: boolean
+}): IRenderedRemoteTrackPublication {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, sheet.classes.publication, trackContainerId);
   createLabeledStat({ container, label: `${trackPublication.kind} publication` }).setText(trackPublication.trackSid);
@@ -71,7 +79,7 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
       renderRemoteDataTrack();
     } else {
       if (canRenderTrack(track)) {
-        renderedTrack = renderRemoteMediaTrack(track, trackPublication, container, autoAttach);
+        renderedTrack = renderRemoteMediaTrack({ room, track, trackPublication, container, autoAttach });
       } else {
         console.warn('CanRender returned false for ', track);
       }

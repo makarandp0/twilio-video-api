@@ -25,7 +25,6 @@ export function syntheticAudio() : SyntheticAudioControl {
     originalStop.call(track);
   };
 
-  console.log('makarand gainNode: ', gainNode.gain);
   gainNode.gain.value += 0.2
   return {
     track,

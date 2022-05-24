@@ -1,5 +1,5 @@
 import { sheets } from 'jss';
-import { AudioTrack, LocalAudioTrack, LocalVideoTrack, RemoteAudioTrack, RemoteVideoTrack, VideoTrack } from 'twilio-video';
+import { AudioTrack, LocalAudioTrack, LocalVideoTrack, RemoteAudioTrack, RemoteVideoTrack, Room, VideoTrack } from 'twilio-video';
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
 import { createElement } from './components/createElement';
@@ -46,7 +46,9 @@ function getClass(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | 
   }
 }
 
-export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack, container: HTMLElement) {
+export function renderTrackDetails({
+  room, track, container
+} : { room?: Room, track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack, container: HTMLElement }) {
   let outerDiv: HTMLFieldSetElement;
   ({ innerDiv: container, outerDiv } = createCollapsibleDiv({ container, headerText: 'Track Details', startHidden: true, divClass: [] }));
   // container = createDiv(container, 'trackStats');
@@ -78,18 +80,17 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
 
   let switchOffReason: ILabeledStat|null = null;
   let trackEnabled: ILabeledStat|null = null;
-  let isSwitchedOff: ILabeledStat|null = null;
+  let midValue: ILabeledStat|null = null;
   if (isRemoteTrack(track)) {
     switchOffReason = createLabeledStat({
       container,
       label: 'switchOffReason',
-      valueMapper: (text: string|null) => text ? sheet.classes.background_yellow : undefined
+      valueMapper: (text: string|null) => text !== 'null' ? sheet.classes.background_yellow : undefined
     });
-
-    isSwitchedOff = createLabeledStat({
+    midValue = createLabeledStat({
       container,
-      label: 'isSwitchedOff',
-      valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
+      label: 'mid',
+      valueMapper: (text: string) => text === 'none' ? sheet.classes.background_yellow : undefined
     });
   } else {
     trackEnabled = createLabeledStat({
@@ -116,8 +117,25 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
   // line separator between settings
   createElement({ container, type: 'hr'});
 
+  function getTrackMidValue() {
+    let mid = "none";
+    if ( room ) {
+      if (track.mediaStreamTrack) {
+        // @ts-ignore
+        const pcs: RTCPeerConnection[] = Array.from(room._signaling._peerConnectionManager._peerConnections.values()).map(pc => pc._peerConnection._peerConnection);
+        pcs.forEach(pc => {
+          const transceiver = pc.getTransceivers().find(t => t?.receiver?.track?.id == track.mediaStreamTrack.id);
+          if (transceiver) {
+            mid = transceiver.mid || "none";
+          }
+        });
+      }
+    }
+    return mid;
+  }
+
   const trackSettingKeyToLabeledStat = new Map<string, ILabeledStat>();
-  function updateTrackSettings() {
+  function updateMSTrackSettings() {
     if (track.mediaStreamTrack) {
       const trackSettings = track.mediaStreamTrack.getSettings();
       const keys = Object.keys(trackSettings);
@@ -151,56 +169,59 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
         trackSettingKeyToLabeledStat.set('mediaStreamTrack', settingStat);
       }
     }
+    if (isRemoteTrack(track)) {
+      midValue?.setText(getTrackMidValue());
+    }
+
   }
 
   function listenOnMSTrack(msTrack: MediaStreamTrack) {
     if (msTrack) {
-      msTrack.addEventListener('ended', () => updateStats());
-      msTrack.addEventListener('mute', () => updateStats());
-      msTrack.addEventListener('unmute', () => updateStats());
+      msTrack.addEventListener('ended', () => updateTrackDetails());
+      msTrack.addEventListener('mute', () => updateTrackDetails());
+      msTrack.addEventListener('unmute', () => updateTrackDetails());
 
       // un-listen
       return () => {
-        msTrack.removeEventListener('ended', () => updateStats());
-        msTrack.removeEventListener('mute', () => updateStats());
-        msTrack.removeEventListener('unmute', () => updateStats());
+        msTrack.removeEventListener('ended', () => updateTrackDetails());
+        msTrack.removeEventListener('mute', () => updateTrackDetails());
+        msTrack.removeEventListener('unmute', () => updateTrackDetails());
       }
     }
   }
 
-  track.on('dimensionsChanged', () => updateStats());
-  track.on('disabled', () => updateStats());
-  track.on('enabled', () => updateStats());
-  track.on('stopped', () => updateStats());
-  track.on('switchedOff', () => updateStats());
-  track.on('switchedOn', () => updateStats());
+  track.on('dimensionsChanged', () => updateTrackDetails());
+  track.on('disabled', () => updateTrackDetails());
+  track.on('enabled', () => updateTrackDetails());
+  track.on('stopped', () => updateTrackDetails());
+  track.on('switchedOff', () => updateTrackDetails());
+  track.on('switchedOn', () => updateTrackDetails());
 
   let listener: (() => void) | undefined = undefined;
   track.on('started', () => {
     if (listener) {
       listener();
     }
-    updateStats();
+    updateTrackDetails();
     listener = listenOnMSTrack(track.mediaStreamTrack);
   });
 
-  function updateStats() {
+  function updateTrackDetails() {
     readyState.setText(track.mediaStreamTrack ? track.mediaStreamTrack.readyState : 'unknown');
 
     // enabled.setText(`${track.mediaStreamTrack.enabled}`);
     started.setText(`${track.isStarted}`);
     muted.setText(track.mediaStreamTrack ? `${track.mediaStreamTrack.muted}` : 'unknown');
     if (isRemoteTrack(track)) {
-      isSwitchedOff?.setText(`${track.isSwitchedOff}`)
       switchOffReason?.setText(`${track.switchOffReason}`)
     } else {
       trackEnabled?.setText(`${track.isEnabled}`);
     }
 
-    updateTrackSettings();
+    updateMSTrackSettings();
   }
 
-  return { updateStats };
+  return { updateTrackDetails };
 }
 
 

@@ -137,12 +137,12 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {
-    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
+    const rendered = renderRemoteTrackPublication({ room, trackPublication: publication, container: participantMedia, autoAttach: shouldAutoAttach() });
     renderedPublications.set(publication.trackSid, rendered);
   });
 
   participant.on('trackPublished', publication => {
-    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
+    const rendered = renderRemoteTrackPublication({ room, trackPublication: publication, container: participantMedia, autoAttach: shouldAutoAttach() });
     renderedPublications.set(publication.trackSid, rendered);
   });
   participant.on('trackUnpublished', publication => {

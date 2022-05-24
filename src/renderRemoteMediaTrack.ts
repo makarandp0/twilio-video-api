@@ -1,4 +1,4 @@
-import { RemoteAudioTrack, RemoteAudioTrackStats, RemoteTrackPublication, RemoteVideoTrack, RemoteVideoTrackStats } from 'twilio-video';
+import { RemoteAudioTrack, RemoteAudioTrackStats, RemoteTrackPublication, RemoteVideoTrack, RemoteVideoTrackStats, Room } from 'twilio-video';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat, ILabeledStat } from './components/labeledstat';
@@ -36,11 +36,13 @@ export type IRenderedRemoteMediaTrack = {
   stopRendering: () => void;
 }
 
-export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrack, trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean): IRenderedRemoteMediaTrack {
+export function renderRemoteMediaTrack({
+  room, track, trackPublication, container, autoAttach
+} : { room: Room, track: RemoteAudioTrack | RemoteVideoTrack, trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean }): IRenderedRemoteMediaTrack {
   let trackFPS: ILabeledStat;
   let trackAudioLevel: ILabeledStat;
   const videoTrack = track.kind === 'video' ? track as RemoteVideoTrack : null;
-  const renderedTrack = renderTrack({ track, container, autoAttach });
+  const renderedTrack = renderTrack({ room, track, container, autoAttach });
   const trackBytesDiv = createDiv(container, sheet.classes.remoteTrackControls, 'remoteTrackControls');
   const statBytes = createLabeledStat({
     container: trackBytesDiv,

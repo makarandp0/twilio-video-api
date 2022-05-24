@@ -2,8 +2,8 @@ import { waveform } from './components/waveform';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat } from './components/labeledstat';
-import { createTrackStats } from './createTrackStats';
-import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack, Track } from 'twilio-video';
+import { renderTrackDetails } from './renderTrackDetails';
+import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack, Track, Room } from 'twilio-video';
 
 import jss from './jss'
 import { setupAudioSyncDevices } from './setupAudioSyncDevices';
@@ -76,18 +76,19 @@ export function attachVideoTrack(track: VideoTrack, container: HTMLElement) {
 }
 
 // Attach the Track to the DOM.
-export function renderTrack({ track, container, autoAttach } : {
+export function renderTrack({ room, track, container, autoAttach } : {
+  room?: Room,
   track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack,
   container: HTMLElement,
   autoAttach: boolean
 }) {
 
   const trackContainer = createDiv(container, sheet.classes.trackContainer);
-  const { updateStats } = createTrackStats(track, trackContainer);
+  const { updateTrackDetails } = renderTrackDetails({ room, track, container: trackContainer });
 
   const controlContainer = createDiv(trackContainer, 'trackControls');
 
-  createButton('update', controlContainer, () => updateStats());
+  createButton('update', controlContainer, () => updateTrackDetails());
 
   let mediaControls: HTMLElement | null = null;
   let stopMediaRender = () => {};
@@ -144,11 +145,11 @@ export function renderTrack({ track, container, autoAttach } : {
   if (autoAttach) {
     attachDetachBtn.click();
   }
-  updateStats();
+  updateTrackDetails();
   return {
     trackContainer,
     track,
-    updateStats,
+    updateTrackDetails,
     stopRendering: () => {
       track.detach().forEach(element => {
         element.remove()
