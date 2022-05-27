@@ -76,19 +76,18 @@ export function attachVideoTrack(track: VideoTrack, container: HTMLElement) {
 }
 
 // Attach the Track to the DOM.
-export function renderTrack({ room, track, container, autoAttach } : {
-  room?: Room,
+export function renderTrack({ track, container, autoAttach } : {
   track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack,
   container: HTMLElement,
   autoAttach: boolean
 }) {
 
   const trackContainer = createDiv(container, sheet.classes.trackContainer);
-  const { updateTrackDetails } = renderTrackDetails({ room, track, container: trackContainer });
+  const { updateTrackDetails } = renderTrackDetails({ track, container: trackContainer });
 
   const controlContainer = createDiv(trackContainer, 'trackControls');
 
-  createButton('update', controlContainer, () => updateTrackDetails());
+  // createButton('update', controlContainer, () => updateTrackDetails());
 
   let mediaControls: HTMLElement | null = null;
   let stopMediaRender = () => {};
@@ -108,7 +107,6 @@ export function renderTrack({ room, track, container, autoAttach } : {
 
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
-      createButton('update', mediaControls, () => updateMediaElementState());
 
       // @ts-ignore
       const setSinkId = audioVideoElement.setSinkId ? audioVideoElement.setSinkId.bind(audioVideoElement) : null;

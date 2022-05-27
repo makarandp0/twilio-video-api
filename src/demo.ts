@@ -117,4 +117,20 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   }
 }
 
+// function getRenderHints(room) {
+//   function getParticipantIdentityFromTrack(room, trackSid) {
+//     const p = Array.from(room.participants.values()).find(p => p.tracks.has(trackSid));
+//     return p ? p.identity : 'Unknown';
+//   }
+
+//   const hints = room._signaling._renderHintsSignaling._trackSidsToRenderHints;
+//   return Array.from(hints.keys()).map(k => {
+//     const participant = getParticipantIdentityFromTrack(room, k) ?? "Unknown";
+//     const hint = hints.get(k);
+//     const { enabled, renderDimensions } = hint;
+//     const height = renderDimensions ? renderDimensions.height : -1;
+//     const width = renderDimensions ? renderDimensions.width : -1;
+//     return `${participant}: ${enabled ? "On": "Off"}:${width}x${height}`;
+//   }).join(", ");
+// }
 

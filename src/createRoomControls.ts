@@ -426,7 +426,7 @@ export function createRoomControls(
     {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
-    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
+    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720, "name" : "Makarand"}'},
   ];
   setDefaultValues();
   function setDefaultValues() {
@@ -447,7 +447,8 @@ export function createRoomControls(
     })
   }
 
-  const clipboardBtn = createButton('copy link to clipboard', container, () => {
+
+  const clipboardBtn = createButton('Copy to clipboard', container, () => {
     const url = new URL(window.location.origin + window.location.pathname);
     controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
       if ('value' in control) {
@@ -463,6 +464,26 @@ export function createRoomControls(
     console.log("URL:", url.toString());
     navigator.clipboard.writeText(url.toString());
   });
+
+  const pasteFromClipboard = createButton('Paste', container, async () => {
+    const string = await navigator.clipboard.readText();
+    const url = new URL(string);
+    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
+      const searchParamValue = url.searchParams.get(urlParamName);
+      if (searchParamValue != null) {
+        if ('value' in control) {
+          if (inputType === 'checkBox') {
+            control.checked = searchParamValue === 'true' ? true : false;
+          } else if (inputType === 'editBox') {
+            control.value = searchParamValue;
+          }
+        } else if ('setValue' in control) {
+          control.setValue(searchParamValue);
+        }
+      }
+    });
+  });
+
 
   // clipboardBtn.btn.classList.add(sheet.classes.imageBackground);
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);

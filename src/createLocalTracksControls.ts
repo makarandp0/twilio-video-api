@@ -134,7 +134,7 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
         break;
 
         case 'Synthetic Video':
-        localTrack = new Video.LocalVideoTrack(syntheticVideo({ width: 640, height: 360, word: thisTrackName }), { logLevel: 'warn', name: thisTrackName });
+        localTrack = new Video.LocalVideoTrack(syntheticVideo({ width: 640, height: 360, word: trackOptions.name || thisTrackName }), { logLevel: 'warn', name: thisTrackName });
         break;
 
         case 'Synthetic Audio':
