@@ -1,7 +1,7 @@
 import { waveform } from './components/waveform';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
-import { createLabeledStat } from './components/labeledstat';
+import { createLabeledStat, ILabeledStat } from './components/labeledstat';
 import { renderTrackDetails } from './renderTrackDetails';
 import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack, Track, Room } from 'twilio-video';
 
@@ -87,8 +87,6 @@ export function renderTrack({ track, container, autoAttach } : {
 
   const controlContainer = createDiv(trackContainer, 'trackControls');
 
-  // createButton('update', controlContainer, () => updateTrackDetails());
-
   let mediaControls: HTMLElement | null = null;
   let stopMediaRender = () => {};
   const attachDetachBtn = createButton('attach', controlContainer, () => {
@@ -107,6 +105,7 @@ export function renderTrack({ track, container, autoAttach } : {
 
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
+      createButton('print track', mediaControls, () => console.log({audioVideoElement}));
 
       // @ts-ignore
       const setSinkId = audioVideoElement.setSinkId ? audioVideoElement.setSinkId.bind(audioVideoElement) : null;
@@ -143,7 +142,10 @@ export function renderTrack({ track, container, autoAttach } : {
   if (autoAttach) {
     attachDetachBtn.click();
   }
+
   updateTrackDetails();
+
+  track.on('started', () => updateTrackDetails());
   return {
     trackContainer,
     track,

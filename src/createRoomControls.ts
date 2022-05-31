@@ -60,6 +60,9 @@ const style = {
   joinRoomButton: {
     height: '3em',
   },
+  width100: {
+    width: '100%',
+  },
   controlOptions: {
     display: 'flex',
     'flex-flow': 'row wrap',
@@ -409,7 +412,7 @@ export function createRoomControls(
     labelText: 'trackConstraints: ',
     placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
     labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput],
+    inputClasses: [sheet.classes.roomControlsInput, sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
@@ -426,7 +429,7 @@ export function createRoomControls(
     {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
-    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720, "name" : "Makarand"}'},
+    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
   ];
   setDefaultValues();
   function setDefaultValues() {
@@ -447,8 +450,9 @@ export function createRoomControls(
     })
   }
 
+  const copyPasteControls = createDiv(container, sheet.classes.roomControlsRow);
 
-  const clipboardBtn = createButton('Copy to clipboard', container, () => {
+  const clipboardBtn = createButton('Copy', copyPasteControls, () => {
     const url = new URL(window.location.origin + window.location.pathname);
     controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
       if ('value' in control) {
@@ -465,7 +469,7 @@ export function createRoomControls(
     navigator.clipboard.writeText(url.toString());
   });
 
-  const pasteFromClipboard = createButton('Paste', container, async () => {
+  const pasteFromClipboard = createButton('Paste', copyPasteControls, async () => {
     const string = await navigator.clipboard.readText();
     const url = new URL(string);
     controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
@@ -483,6 +487,8 @@ export function createRoomControls(
       }
     });
   });
+  pasteFromClipboard.btn.classList.add(sheet.classes.width100);
+  clipboardBtn.btn.classList.add(sheet.classes.width100);
 
 
   // clipboardBtn.btn.classList.add(sheet.classes.imageBackground);
