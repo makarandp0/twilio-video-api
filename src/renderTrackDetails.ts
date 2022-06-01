@@ -94,9 +94,6 @@ export function renderTrackDetails({
   track.on('disabled', () => updateTrackDetails());
   track.on('enabled', () => updateTrackDetails());
   track.on('stopped', () => updateTrackDetails());
-
-  let listener: (() => void) | undefined = undefined;
-
   track.on('started', () => updateTrackDetails());
   track.on('switchedOff', () => updateTrackDetails());
   track.on('switchedOn', () => updateTrackDetails());

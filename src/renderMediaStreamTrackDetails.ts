@@ -11,7 +11,7 @@ export type IRenderedMediaStreamTrack = {
 
 export function renderMediaStreamTrackDetails({ mediaStreamTrack, container }: { mediaStreamTrack: MediaStreamTrack|null; container: HTMLElement; }) : IRenderedMediaStreamTrack {
     // media stream track details.
-  const { innerDiv, outerDiv } = createCollapsibleDiv({ container, headerText: 'MediaStreamTrack Details', startHidden: true, divClass: [] });
+  const { innerDiv, outerDiv } = createCollapsibleDiv({ container, headerText: 'MediaStreamTrack Details', startHidden: false, divClass: [] });
   container = createDiv(innerDiv, []);
   const readyState = createLabeledStat({
     container,

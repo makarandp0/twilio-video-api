@@ -105,7 +105,7 @@ export function renderTrack({ track, container, autoAttach } : {
 
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
-      createButton('print track', mediaControls, () => console.log({audioVideoElement}));
+      createButton('log element', mediaControls, () => console.log({audioVideoElement}));
 
       // @ts-ignore
       const setSinkId = audioVideoElement.setSinkId ? audioVideoElement.setSinkId.bind(audioVideoElement) : null;
@@ -137,6 +137,7 @@ export function renderTrack({ track, container, autoAttach } : {
       attachDetachBtn.text('detach');
       updateMediaElementState();
     }
+    updateTrackDetails();
   });
 
   if (autoAttach) {
@@ -145,7 +146,6 @@ export function renderTrack({ track, container, autoAttach } : {
 
   updateTrackDetails();
 
-  track.on('started', () => updateTrackDetails());
   return {
     trackContainer,
     track,
