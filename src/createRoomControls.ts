@@ -193,7 +193,6 @@ export function createRoomControls(
     placeHolder: 'Enter identity or random one will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: [sheet.classes.roomControlsInput]
-
   });
 
   const roomNameInput = createLabeledInput({
@@ -266,8 +265,12 @@ export function createRoomControls(
     // preferredAudioCodecs: [],
     bandwidthProfile: {
       video: {
+        maxSwitchedOnTracks: 10,
         clientTrackSwitchOffControl: 'manual',
         contentPreferencesMode: 'manual',
+      },
+      audio: {
+        maxSwitchedOnTracks: 10
       }
     }
   };

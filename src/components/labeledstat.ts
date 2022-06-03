@@ -72,12 +72,15 @@ export function createLabeledStat({ container, label, id, valueMapper } : {
         }
 
         el.classList.add(sheet.classes.runBlinkAnimation);
-        el.addEventListener('animationend', () => {
+
+        const onAnimationEnded = () => {
           el.classList.remove(sheet.classes.runBlinkAnimation);
           if (containerNeedsUpdate) {
             container.classList.remove(sheet.classes.containerOverFlowHidden);
           }
-        });
+          el.removeEventListener('animationend', onAnimationEnded);
+        }
+        el.addEventListener('animationend', onAnimationEnded);
       }
     }
   };

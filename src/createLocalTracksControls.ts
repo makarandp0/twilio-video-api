@@ -158,21 +158,60 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
           container: renderedTrack.localTrackControls,
           label: 'Gain',
         });
+        syntheticAudioControl.getGain().value = 0.2;
         gainValue.setText(String(syntheticAudioControl.getGain().value));
 
-        createButton("Gain +", renderedTrack.localTrackControls, async () => {
-          if (syntheticAudioControl) {
-            syntheticAudioControl.getGain().value = syntheticAudioControl.getGain().value + 0.1;
-            gainValue.setText(String(syntheticAudioControl.getGain().value));
-          }
+        const gainDeltaInput = createLabeledInput({
+          labelParent: true,
+          container: renderedTrack.localTrackControls,
+          labelText: 'Gain Delta: ',
+          labelClasses: [],
+          inputClasses: [],
+          placeHolder: '',
+          initialValue: String(0.5)
+        });
 
+
+        createButton("Gain +", renderedTrack.localTrackControls, async () => {
+          const delta = Number(gainDeltaInput.value);
+          if (syntheticAudioControl && !isNaN(delta)) {
+            syntheticAudioControl.getGain().value = syntheticAudioControl.getGain().value + delta;
+            gainValue.setText(String(syntheticAudioControl.getGain().value));
+          } else {
+            console.error('not setting gain');
+          }
         });
         createButton("Gain -", renderedTrack.localTrackControls, async () => {
-          if (syntheticAudioControl) {
-            syntheticAudioControl.getGain().value -= 0.1;
+          const delta = Number(gainDeltaInput.value);
+          if (syntheticAudioControl && !isNaN(delta)) {
+            syntheticAudioControl.getGain().value -= delta;
             gainValue.setText(String(syntheticAudioControl.getGain().value));
+          } else {
+            console.error('not setting gain');
           }
         });
+
+        let timerId: number|null;
+        createButton("Simulate", renderedTrack.localTrackControls, async () => {
+          let delta = Number(gainDeltaInput.value);
+          function updateGain(synthetic : SyntheticAudioControl) {
+            synthetic.getGain().value = synthetic.getGain().value + delta;
+            gainValue.setText(String(synthetic.getGain().value));
+            delta *= -1;
+          }
+          if (syntheticAudioControl) {
+            if (timerId) {
+              clearInterval(timerId);
+              timerId = null;
+            } else if (!isNaN(delta)) {
+              // @ts-ignore
+              timerId = setInterval(() => updateGain(syntheticAudioControl), 5000);
+            } else {
+              console.error('not starting simulate because isNan');
+            }
+          }
+        });
+
       }
 
     } catch (ex) {

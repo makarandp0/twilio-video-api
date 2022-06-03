@@ -114,14 +114,12 @@ export function waveform({ width = 200, height = 150, mediaStream }: { mediaStre
       stop();
     },
     updateStartStop: () => {
-      setTimeout(() => {
-        const hasAudio = mediaStream.getAudioTracks().length !== 0;
-        if (hasAudio && stopped) {
-          start();
-        } else if (!hasAudio) {
-          stop();
-        }
-      });
+      const hasAudio = mediaStream.getAudioTracks().length !== 0;
+      if (hasAudio && stopped) {
+        start();
+      } else if (!hasAudio) {
+        stop();
+      }
     }
   }
 }
