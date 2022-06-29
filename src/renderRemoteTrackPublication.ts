@@ -88,6 +88,7 @@ export function renderRemoteTrackPublication({
 
 
   if (trackPublication.isSubscribed) {
+    log2(`already Subscribed to ${trackPublication.kind}`);
     renderRemoteTrack();
   }
 
@@ -97,6 +98,7 @@ export function renderRemoteTrackPublication({
   });
 
   trackPublication.on('unsubscribed', () => {
+    log2(`UNsubscribed to ${trackPublication.kind}`);
     renderedTrack?.stopRendering();
     renderedTrack = null;
   });
