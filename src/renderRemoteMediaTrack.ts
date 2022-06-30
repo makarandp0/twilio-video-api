@@ -1,4 +1,4 @@
-import { RemoteAudioTrack, RemoteAudioTrackStats, RemoteTrackPublication, RemoteVideoTrack, RemoteVideoTrackStats } from 'twilio-video';
+import { RemoteAudioTrack, RemoteAudioTrackStats, RemoteTrackPublication, RemoteVideoTrack, RemoteVideoTrackStats, Room } from 'twilio-video';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat, ILabeledStat } from './components/labeledstat';
@@ -36,7 +36,27 @@ export type IRenderedRemoteMediaTrack = {
   stopRendering: () => void;
 }
 
-export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrack, trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean): IRenderedRemoteMediaTrack {
+function getTrackMidValue(room: Room, track: RemoteAudioTrack|RemoteVideoTrack) {
+  let mid = "none";
+  if ( room ) {
+    if (track.mediaStreamTrack) {
+      // @ts-ignore
+      const pcs: RTCPeerConnection[] = Array.from(room._signaling._peerConnectionManager._peerConnections.values()).map(pc => pc._peerConnection._peerConnection);
+      pcs.forEach(pc => {
+        const transceiver = pc.getTransceivers().find(t => t?.receiver?.track?.id == track.mediaStreamTrack.id);
+        if (transceiver) {
+          mid = transceiver.mid || "none";
+        }
+      });
+    }
+  }
+  return mid;
+}
+
+
+export function renderRemoteMediaTrack({
+  room, track, trackPublication, container, autoAttach
+} : { room: Room, track: RemoteAudioTrack | RemoteVideoTrack, trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean }): IRenderedRemoteMediaTrack {
   let trackFPS: ILabeledStat;
   let trackAudioLevel: ILabeledStat;
   const videoTrack = track.kind === 'video' ? track as RemoteVideoTrack : null;
@@ -74,16 +94,30 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     publisherPriority.setText(`${trackPublication.publishPriority}`);
   });
 
-  const switchOffState = createLabeledStat({
+  const switchOffReason = createLabeledStat({
     container: trackBytesDiv,
-    label: 'Switched',
-    valueMapper: (text: string) => text === 'Off' ? sheet.classes.background_yellow : undefined
+    label: 'switchOffReason',
+    valueMapper: (text: string|null) => text !== 'null' ? sheet.classes.background_yellow : undefined
   });
 
-  const updateSwitchOffState = () => switchOffState.setText(track.isSwitchedOff ? 'Off' : 'On');
+  const midValue = createLabeledStat({
+    container: trackBytesDiv,
+    label: 'mid',
+    valueMapper: (text: string) => text === 'none' ? sheet.classes.background_yellow : undefined
+  });
+
+  const updateSwitchOffState = () => {
+    switchOffReason.setText(`${track.switchOffReason}`);
+    midValue.setText(getTrackMidValue(room, track));
+  };
   track.on('switchedOff', updateSwitchOffState);
   track.on('switchedOn', updateSwitchOffState);
-  updateSwitchOffState();
+
+  createButton('update', trackBytesDiv, () => {
+    updateSwitchOffState();
+    renderedTrack.updateTrackDetails();
+  });
+
 
   // buttons to set subscriber priority.
   const priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority' });
@@ -156,6 +190,7 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
 
       codecAndSsrc.setLabel(trackStats.codec || "null");
       codecAndSsrc.setText("ssrc:" + trackStats.ssrc);
+      updateSwitchOffState();
     },
     stopRendering: () => {
       renderedTrack.stopRendering();

@@ -42,12 +42,51 @@ function createAccessToken({ environment = 'prod', identity, roomName }) {
   return accessTokenGenerator.toJwt();
 }
 
+// fetch is available only on Node 18+ we have to wait.
+async function createRoomUsingFetch({ environment = 'prod', topology, roomName, extraRoomOptions }) {
+  const HOST_NAME_REST = environment === 'prod' ? 'video.twilio.com' : `video.${envSelect.getValue()}.twilio.com`;
+  const HOST_URL_REST = 'https://' + HOST_NAME_REST;
+
+  if (extraRoomOptions)  {
+    extraRoomOptions = JSON.parse(extraRoomOptions);
+  }
+  console.log('extraRoomOptions = ', extraRoomOptions);
+  const fetchURL = 'https://' + HOST_NAME_REST + '?' + new URLSearchParams({
+    Type: topology,
+    UniqueName: roomName,
+    ...extraRoomOptions
+  });
+  console.log('fetchURL: ', fetchURL);
+  try {
+    const response = await fetch(fetchURL, {
+      headers: {
+        Authorization: Buffer.from('apiKeySid.value + ":" + apiKeySecret.value').toString('base64')
+      },
+      method: "POST"
+    });
+
+    console.log(' response.ok = ', response.ok, ' status = ', response.status );
+    if (response.ok) {
+      console.log('response ok!');
+      const json = await response.json();
+      if (json.status === 'in-progress') {
+        return json;
+      }
+    }
+    console.log(response);
+    return response;
+  } catch (ex) {
+    console.log('Fetch error: ', ex);
+  }
+}
+
 async function createRoom({ environment = 'prod', topology, roomName, extraRoomOptions }) {
   const { accountSid, signingKeySid, signingKeySecret } = getCredentials(environment);
   console.log('Using account: ', accountSid);
   const { video } = twilio(signingKeySid, signingKeySecret, {
     accountSid,
-    region: environment === 'prod' ? null : environment
+    region: environment === 'prod' ? null : environment,
+    logLevel: 'debug'
   });
 
   console.log('extraRoomOptions = ', extraRoomOptions);
@@ -60,17 +99,6 @@ async function createRoom({ environment = 'prod', topology, roomName, extraRoomO
     uniqueName: roomName,
     ...extraRoomOptions
   };
-  // if (!maxParticipants) {
-  //   delete createRoomOptions.maxParticipants;
-  // }
-
-  // if (!videoCodecs) {
-  //   delete createRoomOptions.videoCodecs;
-  // }
-
-  // if (!mediaRegion) {
-  //   delete createRoomOptions.mediaRegion;
-  // }
 
   console.log('createRoomOptions: ', createRoomOptions);
   const result = await video.rooms.create(createRoomOptions).catch(error => {
@@ -114,6 +142,7 @@ app.get('/token', async function(request, response, next) {
     // topology was specified, have to create room
     try {
       const result = await createRoom({ environment, roomName, topology, extraRoomOptions });
+      // const result = await createRoomUsingFetch({ environment, roomName, topology, extraRoomOptions });
 
       response.set('Content-Type', 'application/json');
 

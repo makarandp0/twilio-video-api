@@ -36,6 +36,10 @@ const style = {
     // padding: '0.5em',
     'text-align': 'center',
   },
+  zIndex: {
+    // padding: '0.5em',
+    'z-index': 10,
+  },
   roomControlsRow: {
     'width': "100%",
     'flex-direction': 'row',
@@ -55,6 +59,9 @@ const style = {
   },
   joinRoomButton: {
     height: '3em',
+  },
+  width100: {
+    width: '100%',
   },
   controlOptions: {
     display: 'flex',
@@ -186,7 +193,6 @@ export function createRoomControls(
     placeHolder: 'Enter identity or random one will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: [sheet.classes.roomControlsInput]
-
   });
 
   const roomNameInput = createLabeledInput({
@@ -208,7 +214,7 @@ export function createRoomControls(
     labelText,
     placeHolder: 'Enter server url',
     labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
+    inputClasses: [sheet.classes.roomControlsInput, sheet.classes.zIndex]
   });
 
   const extraRoomOptionsControl = createLabeledInput({
@@ -216,6 +222,7 @@ export function createRoomControls(
     labelText: 'extraRoomOptions: ',
     placeHolder: 'extraRoomOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
@@ -224,6 +231,7 @@ export function createRoomControls(
     labelText: 'extraConnectOptions: ',
     placeHolder: 'extraConnectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
@@ -257,8 +265,12 @@ export function createRoomControls(
     // preferredAudioCodecs: [],
     bandwidthProfile: {
       video: {
+        maxSwitchedOnTracks: 10,
         clientTrackSwitchOffControl: 'manual',
         contentPreferencesMode: 'manual',
+      },
+      audio: {
+        maxSwitchedOnTracks: 10
       }
     }
   };
@@ -266,11 +278,11 @@ export function createRoomControls(
   // goes into extraRoomOptionsControl
   const defaultExtraRoomOptions = {
     recordParticipantsOnConnect: false,
-    mediaRegion: "default", // you can specify something like: "us2",
+    mediaRegion: "gll", // you can specify something like: "us2",
     maxParticipants: "default", // large-room is created when participants are 51+
-    videoCodecs: "default" // you can specify something like: ["H264"] or ["H264", "VP8"]
+    videoCodecs: "default", // you can specify something like: ["H264"] or ["H264", "VP8"]
+    largeRoom: "true"
   };
-
 
   function getRoomOptions() {
     const identity = identityInput.value || randomParticipantName(); // randomName();
@@ -403,7 +415,7 @@ export function createRoomControls(
     labelText: 'trackConstraints: ',
     placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
     labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput],
+    inputClasses: [sheet.classes.roomControlsInput, sheet.classes.zIndex],
     inputType: 'textarea'
   });
 
@@ -417,7 +429,7 @@ export function createRoomControls(
     {control: autoPublish, urlParamName: 'autoPublish', inputType: 'checkBox', defaultValue: true},
     {control: extraInfo, urlParamName: 'extraInfo', inputType: 'checkBox', defaultValue: false},
     {control: sendLogs, urlParamName: 'sendLogs', inputType: 'checkBox', defaultValue: false},
-    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
+    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
     {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
@@ -441,7 +453,9 @@ export function createRoomControls(
     })
   }
 
-  const clipboardBtn = createButton('copy link to clipboard', container, () => {
+  const copyPasteControls = createDiv(container, sheet.classes.roomControlsRow);
+
+  const clipboardBtn = createButton('Copy', copyPasteControls, () => {
     const url = new URL(window.location.origin + window.location.pathname);
     controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
       if ('value' in control) {
@@ -457,6 +471,28 @@ export function createRoomControls(
     console.log("URL:", url.toString());
     navigator.clipboard.writeText(url.toString());
   });
+
+  const pasteFromClipboard = createButton('Paste', copyPasteControls, async () => {
+    const string = await navigator.clipboard.readText();
+    const url = new URL(string);
+    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
+      const searchParamValue = url.searchParams.get(urlParamName);
+      if (searchParamValue != null) {
+        if ('value' in control) {
+          if (inputType === 'checkBox') {
+            control.checked = searchParamValue === 'true' ? true : false;
+          } else if (inputType === 'editBox') {
+            control.value = searchParamValue;
+          }
+        } else if ('setValue' in control) {
+          control.setValue(searchParamValue);
+        }
+      }
+    });
+  });
+  pasteFromClipboard.btn.classList.add(sheet.classes.width100);
+  clipboardBtn.btn.classList.add(sheet.classes.width100);
+
 
   // clipboardBtn.btn.classList.add(sheet.classes.imageBackground);
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);

@@ -1,9 +1,9 @@
 import { waveform } from './components/waveform';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
-import { createLabeledStat } from './components/labeledstat';
-import { createTrackStats } from './createTrackStats';
-import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
+import { createLabeledStat, ILabeledStat } from './components/labeledstat';
+import { renderTrackDetails } from './renderTrackDetails';
+import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack, Track, Room } from 'twilio-video';
 
 import jss from './jss'
 import { setupAudioSyncDevices } from './setupAudioSyncDevices';
@@ -27,6 +27,10 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
+function isRemoteTrack(track: Track): track is RemoteAudioTrack | RemoteVideoTrack {
+  return  ('isSwitchedOff' in track);
+}
+
 /**
  * Attach the AudioTrack to the HTMLAudioElement and start the Waveform.
  */
@@ -37,9 +41,26 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const canvasContainer = createDiv(container, 'canvasContainer');
   canvasContainer.appendChild(wave.element);
 
+  function startOrStopWaveForm() {
+    wave.updateStartStop();
+  }
+
+  if (isRemoteTrack(track)) {
+    const remoteAudioTrack = track as RemoteAudioTrack;
+    remoteAudioTrack.addListener('switchedOff', startOrStopWaveForm);
+    remoteAudioTrack.addListener('switchedOn', startOrStopWaveForm);
+  }
+
   return {
     mediaElement: audioElement,
-    stop: (): void => { wave.stop() }
+    stop: (): void => {
+      wave.stop();
+      if (isRemoteTrack(track)) {
+        const remoteAudioTrack = track as RemoteAudioTrack;
+        remoteAudioTrack.removeListener('switchedOff', startOrStopWaveForm);
+        remoteAudioTrack.removeListener('switchedOn', startOrStopWaveForm);
+      }
+    }
   }
 }
 
@@ -62,11 +83,9 @@ export function renderTrack({ track, container, autoAttach } : {
 }) {
 
   const trackContainer = createDiv(container, sheet.classes.trackContainer);
-  const { updateStats } = createTrackStats(track, trackContainer);
+  const { updateTrackDetails } = renderTrackDetails({ track, container: trackContainer });
 
   const controlContainer = createDiv(trackContainer, 'trackControls');
-
-  createButton('update', controlContainer, () => updateStats());
 
   let mediaControls: HTMLElement | null = null;
   let stopMediaRender = () => {};
@@ -86,7 +105,7 @@ export function renderTrack({ track, container, autoAttach } : {
 
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
-      createButton('update', mediaControls, () => updateMediaElementState());
+      createButton('log element', mediaControls, () => console.log({audioVideoElement}));
 
       // @ts-ignore
       const setSinkId = audioVideoElement.setSinkId ? audioVideoElement.setSinkId.bind(audioVideoElement) : null;
@@ -118,16 +137,19 @@ export function renderTrack({ track, container, autoAttach } : {
       attachDetachBtn.text('detach');
       updateMediaElementState();
     }
+    updateTrackDetails();
   });
 
   if (autoAttach) {
     attachDetachBtn.click();
   }
-  updateStats();
+
+  updateTrackDetails();
+
   return {
     trackContainer,
     track,
-    updateStats,
+    updateTrackDetails,
     stopRendering: () => {
       track.detach().forEach(element => {
         element.remove()

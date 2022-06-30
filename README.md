@@ -31,7 +31,7 @@ This server is used by the webpage to generate token to join a room.
 ```
 node server
 ```
-server by defaults listens to requests on port 3000
+server by defaults listens to requests on port 3002
 
 - Step 5: open the application
 
@@ -67,7 +67,7 @@ app supports various url parameters
 | topology        | type of room to use  |  `group-small`  |
 | env             | backend environment to use  |  `prod`  |
 | extraConnectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
-| server          | server to use to acquire token to join video room |  `http://localhost:3000`  |
+| server          | server to use to acquire token to join video room |  `http://localhost:3002`  |
 | trackConstraints| constraints to use when creating a track |  ``  |
 
 

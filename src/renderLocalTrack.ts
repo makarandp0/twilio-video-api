@@ -70,6 +70,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
   let publishBtn: IButton;
   let priority: ILabeledStat;
   let trackPublication: LocalTrackPublication | null = Array.from(room.localParticipant.tracks.values()).find(trackPub => trackPub.track === track) || null;
+
   const updateControls = () => {
     // show priority buttons only when trackPublication is available.
     priorityButtons.forEach(priButton => priButton.show(!!trackPublication))
@@ -98,6 +99,14 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     }
   });
 
+  // for large rooms publish can happen later
+  room.localParticipant.on('trackPublished', publication => {
+    if (publication.track === track) {
+      console.log(`Successfully published ${publication.kind} Track`);
+      trackPublication = publication;
+      updateControls();
+    }
+  });
 
   priority = createLabeledStat({
     container,
@@ -135,20 +144,22 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
 }
 
 export interface IRenderedLocalTrack {
+  localTrackControls: HTMLDivElement,
   roomAdded: (room: Room) => void;
   roomRemoved: (room: Room) => void;
+  setOnClosed: (callback: () => void) => void;
 }
 
-export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, trackName = 'LocalTrack', onClosed, videoDevices = [] }: {
+export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, trackName = 'LocalTrack', videoDevices = [] }: {
   trackName?: string,
   rooms: Room[],
   track: LocalAudioTrack | LocalVideoTrack,
   container: HTMLElement,
   autoAttach: boolean,
   autoPublish: boolean,
-  onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
 }): IRenderedLocalTrack {
+  let onClosed = () => {};
   const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: trackName, divClass: sheet.classes.localTrackContainer });
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
@@ -237,8 +248,14 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     onClosed();
   });
 
+  function setOnClosed(callback: () => void) {
+    onClosed = callback;
+  };
+
   return {
+    localTrackControls,
     roomAdded,
-    roomRemoved
+    roomRemoved,
+    setOnClosed
   };
 }
