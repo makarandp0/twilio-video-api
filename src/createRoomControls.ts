@@ -278,11 +278,11 @@ export function createRoomControls(
   // goes into extraRoomOptionsControl
   const defaultExtraRoomOptions = {
     recordParticipantsOnConnect: false,
-    mediaRegion: "default", // you can specify something like: "us2",
+    mediaRegion: "gll", // you can specify something like: "us2",
     maxParticipants: "default", // large-room is created when participants are 51+
-    videoCodecs: "default" // you can specify something like: ["H264"] or ["H264", "VP8"]
+    videoCodecs: "default", // you can specify something like: ["H264"] or ["H264", "VP8"]
+    largeRoom: "true"
   };
-
 
   function getRoomOptions() {
     const identity = identityInput.value || randomParticipantName(); // randomName();
@@ -429,7 +429,7 @@ export function createRoomControls(
     {control: autoPublish, urlParamName: 'autoPublish', inputType: 'checkBox', defaultValue: true},
     {control: extraInfo, urlParamName: 'extraInfo', inputType: 'checkBox', defaultValue: false},
     {control: sendLogs, urlParamName: 'sendLogs', inputType: 'checkBox', defaultValue: false},
-    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
+    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
     {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
